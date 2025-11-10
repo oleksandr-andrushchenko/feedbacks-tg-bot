@@ -101,11 +101,15 @@ class TelegramBotUpdateHandler
                     ]);
                 } else {
                     $tg = $this->telegramBotAwareHelper->withTelegramBot($bot);
-                    $message = $tg->trans('reply.use_primary');
-                    $message .= ":\n\n";
-                    $message .= $this->telegramBotLinkViewProvider->getTelegramBotLinkView($newBot);
-                    $message = $tg->attentionText($message);
-                    $tg->reply($message);
+                    $tg->reply(
+                        $tg->attentionText(
+                            sprintf(
+                                "%s:\n\n%s",
+                                $tg->trans('reply.use_primary'),
+                                $this->telegramBotLinkViewProvider->getTelegramBotLinkView($newBot)
+                            )
+                        )
+                    );
                 }
 
                 return;

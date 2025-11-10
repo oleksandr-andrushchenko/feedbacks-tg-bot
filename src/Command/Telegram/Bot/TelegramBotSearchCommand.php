@@ -16,6 +16,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Translation\LocaleSwitcher;
 
+/**
+ * @see TelegramBotSearchCommand
+ */
 class TelegramBotSearchCommand extends Command
 {
     public function __construct(

@@ -6,19 +6,19 @@ namespace App\Repository\Feedback;
 
 use App\Entity\Feedback\Feedback;
 use App\Entity\User\User;
+use DateTimeInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
-use DateTimeInterface;
 
 /**
  * @extends ServiceEntityRepository<Feedback>
  *
  * @method Feedback|null find($id, $lockMode = null, $lockVersion = null)
  * @method Feedback|null findOneBy(array $criteria, array $orderBy = null)
- * @method Feedback[]    findAll()
- * @method Feedback[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @method Feedback[] findAll()
+ * @method Feedback[] findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
 class FeedbackRepository extends ServiceEntityRepository
 {
