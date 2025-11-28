@@ -4,7 +4,7 @@ App\Entity\Feedback\Feedback:
       id: feedback1
       user: '@user_1'
       messengerUser: '@messenger_user_1_telegram'
-      searchTerms: [ '@feedback_search_term_instagram_profile_url_3' ]
+      searchTerms: '@feedback_search_term_instagram_profile_url_3' ]
       rating: <(\App\Enum\Feedback\Rating::neutral)>
       description: neutral
       hasActiveSubscription: false

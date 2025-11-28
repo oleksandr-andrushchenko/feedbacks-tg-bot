@@ -6,12 +6,12 @@ namespace App\Service\Telegram\Bot;
 
 use App\Entity\Telegram\TelegramBot;
 use App\Transfer\Telegram\TelegramBotTransfer;
-use Doctrine\ORM\EntityManagerInterface;
+use OA\Dynamodb\ODM\EntityManager;
 
 class TelegramBotCreator
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
+        private readonly EntityManager $entityManager,
         private readonly TelegramBotValidator $telegramBotValidator,
     )
     {

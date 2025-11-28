@@ -32,6 +32,9 @@
         <service id="app.telegram_bot_repository" class="App\Repository\Telegram\Bot\TelegramBotRepository">
             <argument type="service" id="doctrine"/>
         </service>
+        <service id="app.telegram_bot_dynamodb_repository"
+                 class="App\DynamodbRepository\Telegram\Bot\TelegramBotRepository"
+                 parent="oa.dynamodb.entity_repository"/>
         <service id="app.telegram_channel_repository" class="App\Repository\Telegram\Channel\TelegramChannelRepository">
             <argument type="service" id="doctrine"/>
         </service>
@@ -220,11 +223,11 @@
         </service>
         <service id="app.telegram_link_provider" class="App\Service\Telegram\TelegramLinkProvider" lazy="true"/>
         <service id="app.telegram_bot_validator" class="App\Service\Telegram\Bot\TelegramBotValidator" lazy="true">
-            <argument type="service" id="app.telegram_bot_repository"/>
+            <argument type="service" id="app.telegram_bot_dynamodb_repository"/>
             <argument type="service" id="app.intl_country_provider"/>
         </service>
         <service id="app.telegram_controller" class="App\Controller\TelegramController">
-            <argument type="service" id="app.telegram_bot_repository"/>
+            <argument type="service" id="app.telegram_bot_dynamodb_repository"/>
             <argument type="service" id="app.telegram_bot_update_handler"/>
             <argument type="service" id="doctrine.orm.entity_manager"/>
             <argument type="service" id="app.telegram_bot_site_view_response_factory"/>
@@ -232,7 +235,7 @@
             <tag name="controller.service_arguments"/>
         </service>
         <service id="app.telegram_bot_creator" class="App\Service\Telegram\Bot\TelegramBotCreator" lazy="true">
-            <argument type="service" id="doctrine.orm.entity_manager"/>
+            <argument type="service" id="oa.dynamodb.entity_manager"/>
             <argument type="service" id="app.telegram_bot_validator"/>
         </service>
         <service id="app.telegram_bot_updater" class="App\Service\Telegram\Bot\TelegramBotUpdater" lazy="true">

@@ -4,6 +4,7 @@ export
 DC = docker-compose
 BE_FUNCTION_CONTAINER = $(DOCKER_NAME)-be-function
 RDBMS_CONTAINER = $(DOCKER_NAME)-rdbms
+DYNAMODB_CONTAINER = $(DOCKER_NAME)-dynamodb
 
 .PHONY: help
 help: ## Show this help
@@ -26,22 +27,19 @@ stop: ## Stop and remove all Docker containers
 	docker compose down --remove-orphans
 
 .PHONY: restart
-restart: ## Restart all Docker containers and show status
-	$(MAKE) stop
-	sleep 1
-	$(MAKE) start
-	docker ps -a
+restart: stop start ## Restart all Docker containers and show status
+	docker compose ps -a
 
 .PHONY: composer-install
-composer-install: ## Run composer install inside backend container
+composer-install: ## Run composer install inside be-function container
 	docker exec -it $(BE_FUNCTION_CONTAINER) composer install
 
-.PHONY: cache-warmup
-cache-warmup: ## Warm up Symfony cache inside backend container
+.PHONY: warmup-cache
+warmup-cache: ## Warm up Symfony cache inside be-function container
 	docker exec -it $(BE_FUNCTION_CONTAINER) php bin/console cache:warmup
 
-.PHONY: cache-clear
-cache-clear: ## Clear Symfony cache inside backend container
+.PHONY: clear-cache
+clear-cache: ## Clear cache inside be-function
 	docker exec -it $(BE_FUNCTION_CONTAINER) php bin/console cache:clear
 
 .PHONY: import-bots
@@ -53,11 +51,11 @@ sync-bot-webhook: ## Synchronize Telegram bot webhook
 	docker exec -it $(BE_FUNCTION_CONTAINER) php bin/console telegram:bot:webhook:sync wild_s_local_bot
 
 .PHONY: be-function-logs
-be-function-logs: ## View backend function logs
+be-function-logs: ## View be-function function logs
 	docker logs $(BE_FUNCTION_CONTAINER) -f
 
-.PHONY: be-function-login
-be-function-login: ## Open shell inside backend container
+.PHONY: login
+login: ## Open shell inside be-function container
 	docker exec -it $(BE_FUNCTION_CONTAINER) bash
 
 .PHONY: search
@@ -83,3 +81,63 @@ generate-migration: ## Generate a new Doctrine migration file
 .PHONY: run-migrations
 run-migrations: ## Execute pending Doctrine migrations
 	docker exec -it $(BE_FUNCTION_CONTAINER) php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing
+
+.PHONY: create-local-dynamodb
+create-local-dynamodb: ## Create local DynamoDB table
+	@echo "🚀 Creating local DynamoDB table $(DYNAMODB_TABLE)..."
+	@if AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
+		aws dynamodb describe-table \
+		--region "$(AWS_REGION)" \
+		--table-name "$(DYNAMODB_TABLE)" \
+		--endpoint-url "http://localhost:$(DYNAMODB_PORT)" > /dev/null 2>&1; then \
+		echo "⚠️ Table $(DYNAMODB_TABLE) already exists, skipping creation."; \
+	else \
+		echo "🧩 Extracting DynamoDB schema from CloudFormation..."; \
+		docker exec -it $(BE_FUNCTION_CONTAINER) php bin/console dynamodb:schema:extract > /tmp/dynamodb_schema.json; \
+		if [ ! -s /tmp/dynamodb_schema.json ]; then echo '❌ Failed to generate valid DynamoDB schema JSON'; exit 1; fi; \
+		echo "📄 Generated schema:"; \
+		cat /tmp/dynamodb_schema.json | jq .; \
+		AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
+		aws dynamodb create-table \
+			--region "$(AWS_REGION)" \
+			--cli-input-json file:///tmp/dynamodb_schema.json \
+			--table-name "$(DYNAMODB_TABLE)" \
+			--endpoint-url http://localhost:$(DYNAMODB_PORT) \
+			--no-cli-pager; \
+		rm -f /tmp/dynamodb_schema.json; \
+		echo "✅ DynamoDB table $(DYNAMODB_TABLE) initialized in local DynamoDB"; \
+	fi
+
+.PHONY: fetch-local-dynamodb
+fetch-local-dynamodb: ## Fetch 100 records from local DynamoDB
+	@echo "📦 Fetching 100 records from $(DYNAMODB_TABLE)..."
+	AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
+	aws dynamodb scan \
+		--table-name "$(DYNAMODB_TABLE)" \
+		--limit 100 \
+		--endpoint-url "http://localhost:$(DYNAMODB_PORT)" \
+		--region "$(AWS_REGION)" \
+		--no-cli-pager \
+		--output json
+
+.PHONY: drop-local-dynamodb
+drop-local-dynamodb: ## Drop DynamoDB table in local DynamoDB
+	@echo "🗑️ Dropping local DynamoDB table $(DYNAMODB_TABLE)..."
+	@if AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
+		aws dynamodb describe-table \
+		--region "$(AWS_REGION)" \
+		--table-name "$(DYNAMODB_TABLE)" \
+		--endpoint-url "http://localhost:$(DYNAMODB_PORT)" > /dev/null 2>&1; then \
+		AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
+		aws dynamodb delete-table \
+			--region "$(AWS_REGION)" \
+			--table-name "$(DYNAMODB_TABLE)" \
+			--endpoint-url http://localhost:$(DYNAMODB_PORT) \
+			--no-cli-pager; \
+		echo "✅ Table $(DYNAMODB_TABLE) deleted from local DynamoDB"; \
+	else \
+		echo "⚠️ Table $(DYNAMODB_TABLE) does not exist, skipping deletion."; \
+	fi
+
+.PHONY: recreate-local-dynamodb
+recreate-local-dynamodb: drop-local-dynamodb create-local-dynamodb ## Recreate DynamoDB table in local DynamoDB

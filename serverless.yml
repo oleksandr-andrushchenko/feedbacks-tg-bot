@@ -98,11 +98,20 @@ resources:
             AttributeType: S
           - AttributeName: sk
             AttributeType: S
+          - AttributeName: tg_bot_username
+            AttributeType: S
         KeySchema:
-          - AttributeName: pk # e.g. "USER#1"
+          - AttributeName: pk
             KeyType: HASH
-          - AttributeName: sk # e.g. "META", "1759086095241"
+          - AttributeName: sk
             KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: TELEGRAM_BOTS_BY_USERNAME
+            KeySchema:
+              - AttributeName: tg_bot_username
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
         Tags:
           - Key: Project
             Value: !Ref TagProject

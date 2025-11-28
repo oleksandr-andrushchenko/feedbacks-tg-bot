@@ -11,6 +11,9 @@ services:
     environment:
       HANDLER: public/index.php
       DATABASE_URL: "mysql://app:1111@${DOCKER_NAME}-rdbms:3306/app?serverVersion=8&charset=utf8mb4"
+      DYNAMODB_ENDPOINT: "http://${DOCKER_NAME}-dynamodb:8000"
+    networks:
+      - network
 
   ###> doctrine/doctrine-bundle ###
   rdbms:
@@ -27,9 +30,27 @@ services:
       MYSQL_VERSION: 8
     volumes:
       - mysql-data:/var/lib/mysql:rw
-###< doctrine/doctrine-bundle ###
+    networks:
+      - network
+  ###< doctrine/doctrine-bundle ###
+
+  dynamodb:
+    image: amazon/dynamodb-local
+    container_name: "${DOCKER_NAME}-dynamodb"
+    ports:
+      - "${DYNAMODB_PORT}:8000"
+    networks:
+      - network
+    volumes:
+      - dynamodb-data:/home/dynamodblocal/data
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal/data"
 
 volumes:
   ###> doctrine/doctrine-bundle ###
   mysql-data:
+  dynamodb-data:
 ###< doctrine/doctrine-bundle ###
+
+networks:
+  network:
+    name: "${DOCKER_NAME}-network"
