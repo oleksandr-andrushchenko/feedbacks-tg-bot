@@ -4,27 +4,44 @@ declare(strict_types=1);
 
 namespace App\Entity\Telegram;
 
+use DateTimeImmutable;
 use DateTimeInterface;
+use OA\Dynamodb\Attribute\Attribute;
+use OA\Dynamodb\Attribute\Entity;
+use OA\Dynamodb\Attribute\PartitionKey;
+use OA\Dynamodb\Attribute\SortKey;
 
+#[Entity(
+    new PartitionKey('TG_BOT_CONV', ['hash']),
+    new SortKey('META')),
+]
 class TelegramBotConversation
 {
     public function __construct(
+        #[Attribute]
         private readonly string $hash,
+        #[Attribute('messenger_user_id')]
         private readonly string $messengerUserId,
+        #[Attribute('chat_id')]
         private readonly string $chatId,
-        private readonly int $botId,
+        #[Attribute('bot_id')]
+        private readonly string $botId,
+        #[Attribute]
         private readonly string $class,
-        private ?array $state = null,
+        #[Attribute]
+        private ?array $state,
+        #[Attribute('created_at')]
         private ?DateTimeInterface $createdAt = null,
+        #[Attribute('updated_at')]
         private ?DateTimeInterface $updatedAt = null,
+        #[Attribute('expire_at')]
+        private ?DateTimeInterface $expireAt = null,
         private ?int $id = null,
     )
     {
-    }
-
-    public function getId(): ?int
-    {
-        return $this->id;
+        if ($this->expireAt === null) {
+            $this->expireAt = (new DateTimeImmutable())->setTimestamp(time() + 365 * 24 * 60 * 60);
+        }
     }
 
     public function getHash(): string
@@ -42,7 +59,7 @@ class TelegramBotConversation
         return $this->chatId;
     }
 
-    public function getBotId(): int
+    public function getBotId(): string
     {
         return $this->botId;
     }
@@ -86,5 +103,10 @@ class TelegramBotConversation
         $this->updatedAt = $updatedAt;
 
         return $this;
+    }
+
+    public function getExpireAt(): DateTimeInterface
+    {
+        return $this->expireAt;
     }
 }

@@ -18,17 +18,6 @@ readonly class OpArgsBuilder
     }
 
     /**
-     * @param array<string, mixed> $args
-     */
-    public function create(OpEnum $op, array $args = []): AbstractOpArgs
-    {
-        return match ($op) {
-            OpEnum::QUERY => new QueryArgs($args),
-            OpEnum::SCAN => new ScanArgs($args),
-        };
-    }
-
-    /**
      * @return array<string, mixed>
      * @throws ExceptionInterface
      */

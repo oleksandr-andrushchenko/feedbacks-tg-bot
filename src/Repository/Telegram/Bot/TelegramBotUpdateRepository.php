@@ -5,21 +5,23 @@ declare(strict_types=1);
 namespace App\Repository\Telegram\Bot;
 
 use App\Entity\Telegram\TelegramBotUpdate;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Persistence\ManagerRegistry;
+use App\Repository\Repository;
 
 /**
- * @extends ServiceEntityRepository<TelegramBotUpdate>
- *
- * @method TelegramBotUpdate|null find($id, $lockMode = null, $lockVersion = null)
- * @method TelegramBotUpdate|null findOneBy(array $criteria, array $orderBy = null)
- * @method TelegramBotUpdate[]    findAll()
- * @method TelegramBotUpdate[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @extends Repository<TelegramBotUpdate>
  */
-class TelegramBotUpdateRepository extends ServiceEntityRepository
+class TelegramBotUpdateRepository extends Repository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(
+        TelegramBotUpdateDoctrineRepository $telegramBotUpdateDoctrineRepository,
+        TelegramBotUpdateDynamodbRepository $telegramBotUpdateDynamodbRepository,
+    )
     {
-        parent::__construct($registry, TelegramBotUpdate::class);
+        parent::__construct($telegramBotUpdateDoctrineRepository, $telegramBotUpdateDynamodbRepository);
+    }
+
+    public function findOneByUpdateId($updateId): ?TelegramBotUpdate
+    {
+        return $this->dynamodb->findOneByUpdateId($updateId);
     }
 }

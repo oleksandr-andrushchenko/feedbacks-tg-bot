@@ -105,6 +105,11 @@ class Level1RegionProvider
         );
     }
 
+    public function getLevel1Region(string $id): Level1Region
+    {
+        return $this->level1RegionRepository->find($id);
+    }
+
     private function denormalize(array $record): Level1Region
     {
         return $this->denormalizer->denormalize($record, Level1Region::class, format: 'internal');

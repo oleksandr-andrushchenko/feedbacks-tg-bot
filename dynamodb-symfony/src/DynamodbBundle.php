@@ -39,25 +39,13 @@ final class DynamodbBundle extends AbstractBundle
             ->isRequired()
             ->cannotBeEmpty()
             ->end()
+            ->scalarNode('logger')->info('Service ID of the Logger to use')
+            ->cannotBeEmpty()
+            ->end()
             ->scalarNode('table')
             ->defaultValue(null)
             ->cannotBeEmpty()
             ->info('Default DynamoDB table name')
-            ->end()
-            ->scalarNode('delimiter')
-            ->defaultValue('#')
-            ->cannotBeEmpty()
-            ->info('Default DynamoDB sort key delimiter')
-            ->end()
-            ->scalarNode('pk')
-            ->defaultValue('pk')
-            ->cannotBeEmpty()
-            ->info('Default DynamoDB partition key name')
-            ->end()
-            ->scalarNode('sk')
-            ->defaultValue('sk')
-            ->cannotBeEmpty()
-            ->info('Default DynamoDB sort key name')
             ->end()
             ->end()
         ;
@@ -72,15 +60,15 @@ final class DynamodbBundle extends AbstractBundle
         $clientId = $config['client'];
         $marshalerId = $config['marshaler'];
         $serializerId = $config['serializer'];
-        $table = $config['table'] ?? null;
-        $delimiter = $config['delimiter'] ?? '#';
-        $pk = $config['pk'] ?? 'pk';
-        $sk = $config['sk'] ?? 'sk';
+        $loggerId = $config['logger'];
+        $defaults = [
+            'table' => $config['table'],
+        ];
 
         $services = $container->services();
 
         $services->set('oa.dynamodb.metadata_loader', MetadataLoader::class)
-            ->arg('$defaults', compact('table', 'pk', 'sk', 'delimiter'))
+            ->arg('$defaults', $defaults)
             ->autowire()
             ->autoconfigure()
         ;
@@ -119,12 +107,14 @@ final class DynamodbBundle extends AbstractBundle
             ->arg('$metadataLoader', new ReferenceConfigurator('oa.dynamodb.metadata_loader'))
             ->arg('$entitySerializer', new ReferenceConfigurator('oa.dynamodb.entity_serializer'))
             ->arg('$opArgsBuilder', new ReferenceConfigurator('oa.dynamodb.op_args_builder'))
+            ->arg('$logger', new ReferenceConfigurator($loggerId))
             ->autowire()
             ->autoconfigure()
         ;
 
         $services->set('oa.dynamodb.entity_repository', EntityRepository::class)
             ->arg('$em', new ReferenceConfigurator('oa.dynamodb.entity_manager'))
+            ->call('setLogger', [new ReferenceConfigurator($loggerId)])
             ->abstract()
             ->autowire()
             ->autoconfigure()

@@ -10,8 +10,6 @@
          verbose="true"
          reverseDefectList="true"
          testdox="false"
-         stopOnError="true"
-         stopOnFailure="true"
 >
     <php>
         <ini name="display_errors" value="1"/>
@@ -55,7 +53,6 @@
         <!-- ###- symfony/messenger ### -->
 
         <!-- ###+ symfony/framework-bundle ### -->
-        <env name="APP_ENV" value="dev"/>
         <env name="APP_SECRET" value=""/>
         <env name="APP_SHARE_DIR" value="$APP_PROJECT_DIR/var/share"/>
         <!-- ###- symfony/framework-bundle ### -->

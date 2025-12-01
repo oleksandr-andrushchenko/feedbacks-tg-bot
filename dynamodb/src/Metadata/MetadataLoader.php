@@ -6,7 +6,6 @@ namespace OA\Dynamodb\Metadata;
 
 use OA\Dynamodb\Attribute\Attribute;
 use OA\Dynamodb\Attribute\Entity;
-use OA\Dynamodb\Attribute\PartitionKey;
 use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionException;
@@ -67,7 +66,9 @@ class MetadataLoader
             throw new MetadataException(sprintf('No %s attribute declared for class "%s"', Entity::class, $class));
         }
 
-        $this->normalizeEntity($entityAttribute);
+        if ($entityAttribute->table === null) {
+            $entityAttribute->table = $this->defaults['table'] ?? null;
+        }
 
         $propertyAttributes = $this->getPropertyAttributes($reflection);
         $attributes = [];
@@ -85,30 +86,6 @@ class MetadataLoader
         $this->cache[__METHOD__][$class] = $metadata;
 
         return $metadata;
-    }
-
-    private function normalizeEntity(Entity $entity): void
-    {
-        if ($entity->table === null) {
-            $entity->table = $this->defaults['table'] ?? null;
-        }
-        if ($entity->partitionKey === null) {
-            $entity->partitionKey = new PartitionKey();
-        }
-        if ($entity->partitionKey->name === null) {
-            $entity->partitionKey->name = $this->defaults['pk'] ?? null;
-        }
-        if ($entity->partitionKey->delimiter === null) {
-            $entity->partitionKey->delimiter = $this->defaults['delimiter'] ?? null;
-        }
-        if ($entity->sortKey !== null) {
-            if ($entity->sortKey->name === null) {
-                $entity->sortKey->name = $this->defaults['sk'] ?? null;
-            }
-            if ($entity->sortKey->delimiter === null) {
-                $entity->sortKey->delimiter = $this->defaults['delimiter'] ?? null;
-            }
-        }
     }
 
     /**

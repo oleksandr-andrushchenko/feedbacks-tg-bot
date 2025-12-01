@@ -16,7 +16,7 @@
         </service>
         <service id="app.messenger_user_upserter" class="App\Service\Messenger\MessengerUserUpserter" lazy="true">
             <argument type="service" id="app.messenger_user_repository"/>
-            <argument type="service" id="doctrine.orm.entity_manager"/>
+            <argument type="service" id="app.orm.entity_manager"/>
             <argument type="service" id="app.id_generator"/>
             <argument type="service" id="app.event_bus"/>
         </service>

@@ -98,18 +98,75 @@ resources:
             AttributeType: S
           - AttributeName: sk
             AttributeType: S
-          - AttributeName: tg_bot_username
+          - AttributeName: tg_bot_username_pk
+            AttributeType: S
+          - AttributeName: tg_bot_pk
+            AttributeType: S
+          - AttributeName: tg_bot_group_country_locale_sk
+            AttributeType: S
+          - AttributeName: tg_bot_group_primary_sk
+            AttributeType: S
+          - AttributeName: tg_channel_username_pk
+            AttributeType: S
+          - AttributeName: tg_channel_pk
+            AttributeType: S
+          - AttributeName: tg_channel_group_country_locale_sk
+            AttributeType: S
+          - AttributeName: lvl_1_rgn_pk
+            AttributeType: S
+          - AttributeName: lvl_1_rgn_country_name_sk
             AttributeType: S
         KeySchema:
           - AttributeName: pk
             KeyType: HASH
           - AttributeName: sk
             KeyType: RANGE
+        TimeToLiveSpecification:
+          Enabled: true
+          AttributeName: expire_at
         GlobalSecondaryIndexes:
-          - IndexName: TELEGRAM_BOTS_BY_USERNAME
+          - IndexName: TG_BOTS_BY_USERNAME
             KeySchema:
-              - AttributeName: tg_bot_username
+              - AttributeName: tg_bot_username_pk
                 KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: TG_BOTS_BY_GROUP_COUNTRY_LOCALE
+            KeySchema:
+              - AttributeName: tg_bot_pk
+                KeyType: HASH
+              - AttributeName: tg_bot_group_country_locale_sk
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: TG_BOTS_BY_GROUP_PRIMARY
+            KeySchema:
+              - AttributeName: tg_bot_pk
+                KeyType: HASH
+              - AttributeName: tg_bot_group_primary_sk
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: TG_CHANNELS_BY_USERNAME
+            KeySchema:
+              - AttributeName: tg_channel_username_pk
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: TG_CHANNELS_BY_GROUP_COUNTRY_LOCALE
+            KeySchema:
+              - AttributeName: tg_channel_pk
+                KeyType: HASH
+              - AttributeName: tg_channel_group_country_locale_sk
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: LVL_1_RGN_BY_COUNTRY_NAME
+            KeySchema:
+              - AttributeName: lvl_1_rgn_pk
+                KeyType: HASH
+              - AttributeName: lvl_1_rgn_country_name_sk
+                KeyType: RANGE
             Projection:
               ProjectionType: ALL
         Tags:

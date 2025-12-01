@@ -6,31 +6,61 @@ namespace App\Entity\User;
 
 use App\Entity\Location;
 use DateTimeInterface;
+use OA\Dynamodb\Attribute\Attribute;
+use OA\Dynamodb\Attribute\Entity;
+use OA\Dynamodb\Attribute\PartitionKey;
+use OA\Dynamodb\Attribute\SortKey;
 
+#[Entity(
+    new PartitionKey('USER', ['id']),
+    new SortKey('META'),
+)]
 class User
 {
+    #[Attribute('location_latitude')]
     private ?string $locationLatitude;
+    #[Attribute('location_longitude')]
     private ?string $locationLongitude;
 
     public function __construct(
+        #[Attribute('user_id')]
         private string $id,
+        #[Attribute]
         private ?string $username = null,
+        #[Attribute]
         private ?string $name = null,
+        #[Attribute('country_code')]
         private ?string $countryCode = null,
         ?Location $location = null,
+        #[Attribute('level1_region_id')]
         private ?string $level1RegionId = null,
+        #[Attribute('locale_code')]
         private ?string $localeCode = null,
+        #[Attribute('currency_code')]
         private ?string $currencyCode = null,
+        #[Attribute('timezone')]
         private ?string $timezone = null,
+        #[Attribute('phone_number')]
         private ?string $phoneNumber = null,
+        #[Attribute('email')]
         private ?string $email = null,
+        #[Attribute('subscription_expire_at')]
         private ?DateTimeInterface $subscriptionExpireAt = null,
+        #[Attribute('created_at')]
         private ?DateTimeInterface $createdAt = null,
+        #[Attribute('updated_at')]
         private ?DateTimeInterface $updatedAt = null,
+        #[Attribute('purged_at')]
         private ?DateTimeInterface $purgedAt = null,
     )
     {
         $this->setLocation($location);
+    }
+
+    public function setId(string $id): static
+    {
+        $this->id = $id;
+        return $this;
     }
 
     public function getId(): string

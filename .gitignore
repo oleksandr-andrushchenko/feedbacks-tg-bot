@@ -28,3 +28,7 @@
 ###> phpunit/phpunit ###
 .phpunit.result.cache
 ###< phpunit/phpunit ###
+
+/ngrok.log
+/data/telegram_.tar.xz
+/.env.bak

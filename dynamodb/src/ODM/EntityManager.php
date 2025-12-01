@@ -8,8 +8,12 @@ use Aws\DynamoDb\DynamoDbClient;
 use Generator;
 use OA\Dynamodb\Metadata\MetadataLoader;
 use OA\Dynamodb\Serializer\EntitySerializer;
+use Psr\Log\LoggerInterface;
 use Throwable;
 
+/**
+ * @template T of object
+ */
 readonly class EntityManager
 {
     public function __construct(
@@ -17,12 +21,22 @@ readonly class EntityManager
         protected MetadataLoader $metadataLoader,
         protected EntitySerializer $entitySerializer,
         protected OpArgsBuilder $opArgsBuilder,
+        protected ?LoggerInterface $logger = null,
     )
     {
     }
 
+    public function getClient(): DynamoDbClient
+    {
+        return $this->dynamoDbClient;
+    }
+
+    public function getOpArgsBuilder(): OpArgsBuilder
+    {
+        return $this->opArgsBuilder;
+    }
+
     /**
-     * @template T of object
      * @param class-string<T> $class
      * @param array<string, mixed> $keyFieldValues
      * @return T|null
@@ -52,53 +66,21 @@ readonly class EntityManager
     }
 
     /**
-     * @template T of object
-     * @param class-string<T> $class
-     * @param string $pk
-     * @param null|string $sk
-     * @return T|null
-     * @throws EntityManagerException
-     */
-    public function find(string $class, string $pk, string $sk = null): ?object
-    {
-        try {
-            $entityMetadata = $this->metadataLoader->getEntityMetadata($class);
-            $keyFieldValues = [];
-
-            foreach ($entityMetadata->getPartitionKey()->getFields() as $field) {
-                $keyFieldValues[$field] = $pk;
-                break;
-            }
-
-            foreach ($entityMetadata->getSortKey()?->getFields() as $field) {
-                $keyFieldValues[$field] = $sk;
-                break;
-            }
-
-            return $this->get($class, $keyFieldValues);
-        } catch (Throwable $exception) {
-            $this->wrapException($exception);
-        }
-    }
-
-    /**
-     * @template T of object
      * @param class-string<T> $class
      * @return T|null
      * @throws EntityManagerException
      */
-    public function queryOne(string $class, QueryArgs $queryBuilder): ?object
+    public function queryOne(string $class, QueryArgs $queryArgs): ?object
     {
-        $queryBuilder->limit(1);
+        $queryArgs->limit(1);
 
         /** @var array<int, T> $result */
-        $result = $this->query($class, $queryBuilder)->getResult(true);
+        $result = $this->query($class, $queryArgs)->getResult(true);
 
         return $result[0] ?? null;
     }
 
-    /**
-     * @template T of object
+    /**\
      * @param class-string<T> $class
      * @return ResultStream<T>
      * @throws EntityManagerException
@@ -143,7 +125,6 @@ readonly class EntityManager
     }
 
     /**
-     * @template T of object
      * @param class-string<T> $class
      * @return ResultStream<T>
      * @throws EntityManagerException
@@ -188,7 +169,6 @@ readonly class EntityManager
     }
 
     /**
-     * @template T of object
      * @param T $entity
      * @throws EntityManagerException
      */
@@ -208,7 +188,37 @@ readonly class EntityManager
     }
 
     /**
-     * @template T of object
+     * @param string $class
+     * @param UpdateArgs $updateArgs
+     * @param array $keyFieldValues
+     * @return T|null
+     * @throws EntityManagerException
+     */
+    public function updateOneByQueryReturn(string $class, UpdateArgs $updateArgs, array $keyFieldValues): ?object
+    {
+        try {
+            $key = $this->entitySerializer->serializePrimaryKey($class, $keyFieldValues);
+            $updateArgs->key($key);
+
+            $table = $this->metadataLoader->getEntityMetadata($class)->getTable();
+            $updateArgs->tableName($table)->returnValues('ALL_NEW');
+
+            $params = $this->opArgsBuilder->serialize($updateArgs);
+
+            $result = $this->dynamoDbClient->updateItem($params);
+
+            $rawItem = $result['Attributes'] ?? null;
+            if (null === $rawItem) {
+                return null;
+            }
+
+            return $this->entitySerializer->deserialize($rawItem, $class);
+        } catch (Throwable $exception) {
+            $this->wrapException($exception);
+        }
+    }
+
+    /**
      * @param T $entity
      * @throws EntityManagerException
      */
@@ -270,6 +280,7 @@ readonly class EntityManager
      */
     private function wrapException(Throwable $exception): never
     {
+        $this->logger?->error($exception);
         throw new EntityManagerException(
             sprintf('An error occurred. %s: %s', $exception::class, $exception->getMessage())
         );

@@ -2,4 +2,5 @@ dynamodb:
   client: aws.dynamodb
   marshaler: app.aws.dynamodb.marshaler
   serializer: serializer
+  logger: logger
   table: '%env(resolve:DYNAMODB_TABLE)%'

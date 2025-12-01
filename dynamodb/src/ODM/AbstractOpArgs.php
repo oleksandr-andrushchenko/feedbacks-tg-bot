@@ -9,7 +9,8 @@ abstract class AbstractOpArgs
     public function __construct(
         /** @var array<string, mixed> */
         protected array $args = [],
-    ) {
+    )
+    {
     }
 
     /**
@@ -24,6 +25,12 @@ abstract class AbstractOpArgs
     {
         $this->args['TableName'] = $table;
 
+        return $this;
+    }
+
+    public function key(array $key): static
+    {
+        $this->args['Key'] = $key;
         return $this;
     }
 

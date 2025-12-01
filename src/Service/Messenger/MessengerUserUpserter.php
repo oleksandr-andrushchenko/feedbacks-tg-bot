@@ -9,14 +9,14 @@ use App\Message\Event\ActivityEvent;
 use App\Repository\Messenger\MessengerUserRepository;
 use App\Service\IdGenerator;
 use App\Transfer\Messenger\MessengerUserTransfer;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\ORM\EntityManager;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 class MessengerUserUpserter
 {
     public function __construct(
         private readonly MessengerUserRepository $messengerUserRepository,
-        private readonly EntityManagerInterface $entityManager,
+        private readonly EntityManager $entityManager,
         private readonly IdGenerator $idGenerator,
         private readonly MessageBusInterface $eventBus,
     )

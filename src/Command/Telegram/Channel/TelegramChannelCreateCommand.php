@@ -12,10 +12,10 @@ use App\Exception\Telegram\Bot\TelegramBotGroupNotFoundException;
 use App\Service\Intl\CountryProvider;
 use App\Service\Intl\Level1RegionProvider;
 use App\Service\Intl\LocaleProvider;
+use App\Service\ORM\EntityManager;
 use App\Service\Telegram\Channel\TelegramChannelCreator;
 use App\Service\Telegram\Channel\TelegramChannelInfoProvider;
 use App\Transfer\Telegram\TelegramChannelTransfer;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -27,7 +27,7 @@ class TelegramChannelCreateCommand extends Command
 {
     public function __construct(
         private readonly TelegramChannelCreator $telegramChannelCreator,
-        private readonly EntityManagerInterface $entityManager,
+        private readonly EntityManager $entityManager,
         private readonly TelegramChannelInfoProvider $telegramChannelInfoProvider,
         private readonly CountryProvider $countryProvider,
         private readonly LocaleProvider $localeProvider,

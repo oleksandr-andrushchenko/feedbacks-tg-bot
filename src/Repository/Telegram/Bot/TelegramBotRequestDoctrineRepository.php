@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\DynamodbRepository\Telegram\Bot;
+namespace App\Repository\Telegram\Bot;
 
 use App\Entity\Telegram\TelegramBotRequest;
 use App\Entity\Telegram\TelegramBotRequestLimits;
@@ -18,20 +18,24 @@ use Doctrine\Persistence\ManagerRegistry;
  * @method TelegramBotRequest[]    findAll()
  * @method TelegramBotRequest[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class TelegramBotRequestRepository extends ServiceEntityRepository
+class TelegramBotRequestDoctrineRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, TelegramBotRequest::class);
     }
 
-    public function getLimits(null|int|string $chatId, ?int $inlineMessageId): ?TelegramBotRequestLimits
+    public function getLimits(null|int|string $chatId): ?TelegramBotRequestLimits
     {
-        $perSecondAll = $this
-            ->createQueryBuilder('tr')
+        $now = new DateTime();
+        $oneSecondAgo = (clone $now)->modify('-1 second');
+        $oneMinuteAgo = (clone $now)->modify('-1 minute');
+
+        // Count distinct chats in the last second
+        $perSecondAll = $this->createQueryBuilder('tr')
             ->select('COUNT(DISTINCT tr.chatId)')
-            ->andWhere('tr.createdAt >= :createdAtFrom')
-            ->setParameter('createdAtFrom', new DateTime())
+            ->andWhere('tr.createdAt >= :oneSecondAgo')
+            ->setParameter('oneSecondAgo', $oneSecondAgo)
             ->getQuery()
             ->getSingleScalarResult()
         ;
@@ -40,25 +44,24 @@ class TelegramBotRequestRepository extends ServiceEntityRepository
             return null;
         }
 
-        $perSecond = $this
-            ->createQueryBuilder('tr')
+        // Count messages in this chat in the last second
+        $perSecond = $this->createQueryBuilder('tr')
             ->select('COUNT(tr.id)')
-            ->andWhere('tr.createdAt >= :createdAtFrom')
-            ->setParameter('createdAtFrom', new DateTime())
-            ->andWhere('(tr.chatId = :chatId AND tr.inlineMessageId IS NULL) OR (tr.inlineMessageId = :inlineMessageId AND tr.chatId IS NULL)')
+            ->andWhere('tr.chatId = :chatId')
             ->setParameter('chatId', $chatId)
-            ->setParameter('inlineMessageId', $inlineMessageId)
+            ->andWhere('tr.createdAt >= :oneSecondAgo')
+            ->setParameter('oneSecondAgo', $oneSecondAgo)
             ->getQuery()
             ->getSingleScalarResult()
         ;
 
-        $perMinute = $this
-            ->createQueryBuilder('tr')
+        // Count messages in this chat in the last minute
+        $perMinute = $this->createQueryBuilder('tr')
             ->select('COUNT(tr.id)')
-            ->andWhere('tr.createdAt >= :createdAtFrom')
-            ->setParameter('createdAtFrom', (new DateTime())->modify('-1 minute'))
             ->andWhere('tr.chatId = :chatId')
             ->setParameter('chatId', $chatId)
+            ->andWhere('tr.createdAt >= :oneMinuteAgo')
+            ->setParameter('oneMinuteAgo', $oneMinuteAgo)
             ->getQuery()
             ->getSingleScalarResult()
         ;

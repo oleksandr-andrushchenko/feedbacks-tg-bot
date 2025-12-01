@@ -6,14 +6,21 @@ namespace App\Service\Telegram\Bot;
 
 use App\Entity\Telegram\TelegramBotRequest;
 use App\Exception\Telegram\Bot\TelegramBotException;
-use App\Repository\Telegram\Bot\TelegramBotRequestRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Repository\Telegram\Bot\TelegramBotChatRequestMinRateLimitRepository;
+use App\Repository\Telegram\Bot\TelegramBotChatRequestSecRateLimitRepository;
+use App\Repository\Telegram\Bot\TelegramBotGlobalRequestSecRateLimitRepository;
+use App\Service\ORM\EntityManager;
+use Psr\Log\LoggerInterface;
 
 class TelegramBotRequestChecker
 {
     public function __construct(
-        private readonly TelegramBotRequestRepository $telegramBotRequestRepository,
-        private readonly EntityManagerInterface $entityManager,
+//        private readonly TelegramBotRequestRepository $telegramBotRequestRepository,
+        private readonly TelegramBotChatRequestSecRateLimitRepository $telegramBotChatRequestSecRateLimitRepository,
+        private readonly TelegramBotChatRequestMinRateLimitRepository $telegramBotChatRequestMinRateLimitRepository,
+        private readonly TelegramBotGlobalRequestSecRateLimitRepository $telegramBotGlobalRequestSecRateLimitRepository,
+        private readonly EntityManager $entityManager,
+        private readonly ?LoggerInterface $logger = null,
         private readonly bool $saveOnly = false,
         private readonly int $waitingTimeout = 60,
         private readonly int $intervalBetweenChecks = 1,
@@ -63,6 +70,7 @@ class TelegramBotRequestChecker
      * @param mixed $data
      * @return TelegramBotRequest|null
      * @throws TelegramBotException
+     * @todo optimize: use cache
      */
     public function checkTelegramRequest(TelegramBot $bot, string $method, mixed $data): ?TelegramBotRequest
     {
@@ -75,9 +83,8 @@ class TelegramBotRequestChecker
         }
 
         $chatId = $data['chat_id'] ?? null;
-        $inlineMessageId = $data['inline_message_id'] ?? null;
 
-        if ($chatId === null && $inlineMessageId === null) {
+        if ($chatId === null) {
             return null;
         }
 
@@ -94,37 +101,60 @@ class TelegramBotRequestChecker
                     throw new TelegramBotException('Timed out while waiting for a request spot!');
                 }
 
-                $limits = $this->telegramBotRequestRepository->getLimits($chatId, $inlineMessageId);
+                $second = time();
+                $minute = intdiv($second, 60);
 
-                if ($limits === null) {
-                    break;
+                $globalSec = $this->telegramBotGlobalRequestSecRateLimitRepository->incrementCountBySecond($second);
+                $this->logger?->debug('$globalSec', [
+                    'second' => $globalSec->getSecond(),
+                    'count' => $globalSec->getCount(),
+                    'expireAt' => $globalSec->getExpireAt()->getTimestamp(),
+                    'skip' => $globalSec->getCount() > 30,
+                ]);
+
+                if ($globalSec->getCount() > 30) {
+                    goto wait_and_retry;
                 }
 
-                // No more than one message per second inside a particular chat
-                $chatPerSecond = $limits->getPerSecond() === 0;
+                $chatSec = $this->telegramBotChatRequestSecRateLimitRepository->incrementCountByChatAndSecond($chatId, $second);
+                $this->logger?->debug('$chatSec', [
+                    'chatId' => $chatSec->getChatId(),
+                    'second' => $chatSec->getSecond(),
+                    'count' => $chatSec->getCount(),
+                    'expireAt' => $chatSec->getExpireAt()->getTimestamp(),
+                    'skip' => $chatSec->getCount() > 1,
+                ]);
 
-                // No more than 30 messages per second to different chats
-                $globalPerSecond = $limits->getPerSecondAll() < 30;
-
-                // No more than 20 messages per minute in groups and channels
-                $groupsPerMinute = ((is_numeric($chatId) && $chatId > 0) || $inlineMessageId !== null) || ((!is_numeric($chatId) || $chatId < 0) && $limits->getPerMinute() < 20);
-
-                if ($chatPerSecond && $globalPerSecond && $groupsPerMinute) {
-                    break;
+                if ($chatSec->getCount() > 1) {
+                    goto wait_and_retry;
                 }
 
+                $chatMin = $this->telegramBotChatRequestMinRateLimitRepository->incrementCountByChatAndMinute($chatId, $minute);
+                $this->logger?->debug('$chatMin', [
+                    'chatId' => $chatMin->getChatId(),
+                    'minute' => $chatMin->getMinute(),
+                    'count' => $chatMin->getCount(),
+                    'expireAt' => $chatMin->getExpireAt()->getTimestamp(),
+                    'skip' => $chatMin->getCount() > 20,
+                ]);
+
+                if ($chatMin->getCount() > 20) {
+                    goto wait_and_retry;
+                }
+
+                break;
+
+                wait_and_retry:
                 $timeout--;
-
-                usleep($this->intervalBetweenChecks * 1000000);
+                usleep($this->intervalBetweenChecks * 1_000_000);
             }
         }
 
         $request = new TelegramBotRequest(
             $method,
             $chatId,
-            $inlineMessageId,
             $data,
-            $bot->getEntity()
+            $bot->getEntity(),
         );
         $this->entityManager->persist($request);
 

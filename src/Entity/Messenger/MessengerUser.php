@@ -7,24 +7,50 @@ namespace App\Entity\Messenger;
 use App\Entity\User\User;
 use App\Enum\Messenger\Messenger;
 use DateTimeInterface;
+use OA\Dynamodb\Attribute\Attribute;
+use OA\Dynamodb\Attribute\Entity;
+use OA\Dynamodb\Attribute\PartitionKey;
+use OA\Dynamodb\Attribute\SortKey;
 use Stringable;
 
+#[Entity(
+    new PartitionKey('MESS_USER', ['id']),
+    new SortKey('META'),
+)]
 class MessengerUser implements Stringable
 {
     public function __construct(
-        private string $id,
+        #[Attribute('messenger_user_id')]
+        private readonly string $id,
+        #[Attribute]
         private readonly Messenger $messenger,
+        #[Attribute]
         private readonly string $identifier,
+        #[Attribute]
         private ?string $username = null,
+        #[Attribute]
         private ?string $name = null,
         private ?User $user = null,
+        #[Attribute]
         private bool $showExtendedKeyboard = false,
+        /**
+         * @var array<string>|null
+         */
+        #[Attribute]
         private ?array $botIds = null,
+        #[Attribute]
         private ?array $usernameHistory = null,
+        #[Attribute('created_at')]
         private ?DateTimeInterface $createdAt = null,
+        #[Attribute('updated_at')]
         private ?DateTimeInterface $updatedAt = null,
+        #[Attribute('user_id')]
+        private ?string $userId = null,
     )
     {
+        if ($this->user !== null) {
+            $this->userId = $this->user->getId();
+        }
     }
 
     public function getId(): string
@@ -98,7 +124,7 @@ class MessengerUser implements Stringable
         return $this->botIds === null ? null : array_map('intval', $this->botIds);
     }
 
-    public function addBotId(int $botId): self
+    public function addBotId(string $botId): self
     {
         if ($this->botIds === null) {
             $this->botIds = [];
@@ -165,5 +191,10 @@ class MessengerUser implements Stringable
     public function __toString(): string
     {
         return $this->getId();
+    }
+
+    public function getUserId(): ?string
+    {
+        return $this->userId;
     }
 }

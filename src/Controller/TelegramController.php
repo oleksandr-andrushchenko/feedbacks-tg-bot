@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\DynamodbRepository\Telegram\Bot\TelegramBotRepository;
 use App\Enum\Site\SitePage;
 use App\Exception\Telegram\Bot\TelegramBotNotFoundException;
+use App\Repository\Telegram\Bot\TelegramBotRepository;
 use App\Service\Telegram\Bot\Site\TelegramSiteViewResponseFactory;
 use App\Service\Telegram\Bot\TelegramBotUpdateHandler;
 use Doctrine\ORM\EntityManagerInterface;

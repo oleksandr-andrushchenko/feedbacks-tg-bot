@@ -6,27 +6,59 @@ namespace App\Entity\Telegram;
 
 use App\Enum\Telegram\TelegramBotGroupName;
 use DateTimeInterface;
+use OA\Dynamodb\Attribute\Attribute;
+use OA\Dynamodb\Attribute\Entity;
+use OA\Dynamodb\Attribute\GlobalIndex;
+use OA\Dynamodb\Attribute\PartitionKey;
+use OA\Dynamodb\Attribute\SortKey;
 
+#[Entity(
+    new PartitionKey('TG_CHANNEL', ['id']),
+    new SortKey('META'),
+    [
+        new GlobalIndex(
+            'TG_CHANNELS_BY_USERNAME',
+            new PartitionKey(null, ['username'], 'tg_channel_username_pk')
+        ),
+        new GlobalIndex(
+            'TG_CHANNELS_BY_GROUP_COUNTRY_LOCALE',
+            new PartitionKey('TG_CHANNEL', [], 'tg_channel_pk'),
+            new SortKey(null, ['group', 'countryCode', 'localeCode'], 'tg_channel_group_country_locale_sk'),
+        ),
+    ]
+)]
 class TelegramChannel
 {
     public function __construct(
+        #[Attribute('tg_channel_id')]
+        private readonly string $id,
+        #[Attribute('tg_channel_username_pk')]
         private readonly string $username,
+        #[Attribute]
         private TelegramBotGroupName $group,
+        #[Attribute]
         private string $name,
+        #[Attribute('country_code')]
         private string $countryCode,
+        #[Attribute('locale_code')]
         private string $localeCode,
+        #[Attribute('level_1_region_id')]
         private ?string $level1RegionId = null,
+        #[Attribute('chat_id')]
         private ?string $chatId = null,
+        #[Attribute]
         private bool $primary = true,
+        #[Attribute('created_at')]
         private ?DateTimeInterface $createdAt = null,
+        #[Attribute('updated_at')]
         private ?DateTimeInterface $updatedAt = null,
+        #[Attribute('deleted_at')]
         private ?DateTimeInterface $deletedAt = null,
-        private ?int $id = null,
     )
     {
     }
 
-    public function getId(): ?int
+    public function getId(): string
     {
         return $this->id;
     }

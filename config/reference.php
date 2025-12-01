@@ -1201,10 +1201,8 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *     client: scalar|null, // Service ID of the AWS DynamoDB client to use
  *     marshaler: scalar|null, // Service ID of the AWS Marshaler to use
  *     serializer: scalar|null, // Service ID of the Symfony Serializer to use
+ *     logger?: scalar|null, // Service ID of the Logger to use
  *     table?: scalar|null, // Default DynamoDB table name // Default: null
- *     delimiter?: scalar|null, // Default DynamoDB sort key delimiter // Default: "#"
- *     pk?: scalar|null, // Default DynamoDB partition key name // Default: "pk"
- *     sk?: scalar|null, // Default DynamoDB sort key name // Default: "sk"
  * }
  * @psalm-type ConfigType = array{
  *     imports?: ImportsConfig,

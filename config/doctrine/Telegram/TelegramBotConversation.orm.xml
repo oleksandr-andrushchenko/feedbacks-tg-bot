@@ -5,7 +5,7 @@
         https://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
 
     <entity name="App\Entity\Telegram\TelegramBotConversation"
-            repository-class="App\Repository\Telegram\Bot\TelegramBotConversationRepository"
+            repository-class="App\Repository\Telegram\Bot\TelegramBotConversationDoctrineRepository"
             table="telegram_conversations">
 
         <indexes>

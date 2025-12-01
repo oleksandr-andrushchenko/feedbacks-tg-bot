@@ -8,4 +8,5 @@ enum OpEnum
 {
     case QUERY;
     case SCAN;
+    case UPDATE;
 }

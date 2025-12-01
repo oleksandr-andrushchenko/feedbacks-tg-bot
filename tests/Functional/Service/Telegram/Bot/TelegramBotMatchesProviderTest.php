@@ -29,7 +29,7 @@ class TelegramBotMatchesProviderTest extends TestCase
     {
         $user = $this->makeUser(...$userAddressComponents);
         $bot = $this->makeBot(...$botAddressComponents);
-        $provider = new TelegramBotMatchesProvider($this->createMock(TelegramBotRepository::class));
+        $provider = new TelegramBotMatchesProvider($this->createMock(TelegramBotDoctrineRepository::class));
 
         $actualPoints = $provider->calculateTelegramBotPoints($bot, $user);
         $this->assertEquals($expectedPoints, $actualPoints);
@@ -87,7 +87,7 @@ class TelegramBotMatchesProviderTest extends TestCase
 
             return $this->makeBot(...$botAddressComponents, id: $id);
         }, $botAddressComponentsStack);
-        $repository = $this->createMock(TelegramBotRepository::class);
+        $repository = $this->createMock(TelegramBotDoctrineRepository::class);
         $repository
             ->expects($this->once())
             ->method('findPrimaryByGroup')

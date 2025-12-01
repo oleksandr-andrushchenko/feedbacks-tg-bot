@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\DynamodbRepository\Telegram\Channel;
+namespace App\Repository\Telegram\Channel;
 
 use App\Entity\Telegram\TelegramBot;
 use App\Entity\Telegram\TelegramChannel;
@@ -18,7 +18,7 @@ use Doctrine\Persistence\ManagerRegistry;
  * @method TelegramChannel[]    findAll()
  * @method TelegramChannel[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class TelegramChannelRepository extends ServiceEntityRepository
+class TelegramChannelDoctrineRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {

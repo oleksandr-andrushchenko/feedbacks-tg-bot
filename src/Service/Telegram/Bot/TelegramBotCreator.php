@@ -5,25 +5,24 @@ declare(strict_types=1);
 namespace App\Service\Telegram\Bot;
 
 use App\Entity\Telegram\TelegramBot;
+use App\Service\IdGenerator;
 use App\Transfer\Telegram\TelegramBotTransfer;
-use OA\Dynamodb\ODM\EntityManager;
+use App\Service\ORM\EntityManager;
 
 class TelegramBotCreator
 {
     public function __construct(
         private readonly EntityManager $entityManager,
         private readonly TelegramBotValidator $telegramBotValidator,
+        private readonly IdGenerator $idGenerator,
     )
     {
     }
 
-    /**
-     * @param TelegramBotTransfer $botTransfer
-     * @return TelegramBot
-     */
     public function createTelegramBot(TelegramBotTransfer $botTransfer): TelegramBot
     {
         $bot = new TelegramBot(
+            $this->idGenerator->generateUuid(),
             $botTransfer->getUsername(),
             $botTransfer->getGroup(),
             $botTransfer->getName(),
@@ -40,7 +39,7 @@ class TelegramBotCreator
 
         $this->telegramBotValidator->validateTelegramBot($bot);
 
-        $this->entityManager->persist($bot);
+        $this->entityManager->dynamodb()->persist($bot);
 
         return $bot;
     }

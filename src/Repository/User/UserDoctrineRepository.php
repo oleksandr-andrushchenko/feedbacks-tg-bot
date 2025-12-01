@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\DynamodbRepository\User;
+namespace App\Repository\User;
 
 use App\Entity\User\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -16,7 +16,7 @@ use Doctrine\Persistence\ManagerRegistry;
  * @method User[]    findAll()
  * @method User[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class UserRepository extends ServiceEntityRepository
+class UserDoctrineRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {

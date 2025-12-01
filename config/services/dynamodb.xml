@@ -14,12 +14,17 @@
         </service>
         <service id="app.dynamodb_from_doctrine_transfer_command"
                  class="App\Command\Dynamodb\DynamodbFromDoctrineTransferCommand" lazy="true">
-            <argument type="service" id="doctrine.orm.entity_manager"/>
-            <argument type="service" id="oa.dynamodb.entity_manager"/>
+            <argument type="service" id="app.orm.entity_manager"/>
             <argument type="service" id="app.telegram_bot_repository"/>
+            <argument type="service" id="app.telegram_channel_repository"/>
+            <argument type="service" id="app.level_1_region_repository"/>
+            <argument type="service" id="app.user_repository"/>
             <argument type="service" id="app.telegram_bot_creator"/>
+            <argument type="service" id="app.telegram_channel_creator"/>
             <argument type="service" id="app.intl_country_provider"/>
             <argument type="service" id="app.intl_locale_provider"/>
+            <argument type="service" id="app.level_1_region_provider"/>
+            <argument type="service" id="app.id_generator"/>
             <tag name="console.command" command="dynamodb:from-doctrine:transfer"/>
         </service>
     </services>

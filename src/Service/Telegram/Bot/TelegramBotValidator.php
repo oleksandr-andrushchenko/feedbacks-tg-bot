@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Service\Telegram\Bot;
 
 use App\Entity\Telegram\TelegramBot;
-use App\DynamodbRepository\Telegram\Bot\TelegramBotRepository;
+use App\Repository\Telegram\Bot\TelegramBotRepository;
 use App\Service\Intl\CountryProvider;
 use LogicException;
 

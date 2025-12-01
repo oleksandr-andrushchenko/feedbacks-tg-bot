@@ -6,83 +6,62 @@ namespace App\Repository\Telegram\Bot;
 
 use App\Entity\Telegram\TelegramBot;
 use App\Enum\Telegram\TelegramBotGroupName;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Persistence\ManagerRegistry;
+use App\Repository\Repository;
 
 /**
- * @extends ServiceEntityRepository<TelegramBot>
- *
- * @method TelegramBot|null find($id, $lockMode = null, $lockVersion = null)
- * @method TelegramBot|null findOneBy(array $criteria, array $orderBy = null)
- * @method TelegramBot[]    findAll()
- * @method TelegramBot[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @extends Repository<TelegramBot>
+ * @method TelegramBotDoctrineRepository doctrine()
+ * @property TelegramBotDoctrineRepository doctrine
+ * @method TelegramBotDynamodbRepository dynamodb()
+ * @property  TelegramBotDynamodbRepository dynamodb
  */
-class TelegramBotRepository extends ServiceEntityRepository
+class TelegramBotRepository extends Repository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(
+        TelegramBotDoctrineRepository $telegramBotDoctrineRepository,
+        TelegramBotDynamodbRepository $telegramBotDynamodbRepository,
+    )
     {
-        parent::__construct($registry, TelegramBot::class);
+        parent::__construct($telegramBotDoctrineRepository, $telegramBotDynamodbRepository);
+    }
+
+    public function findAll(): array
+    {
+        return $this->dynamodb->findAll();
     }
 
     public function findAnyOneByUsername(string $username): ?TelegramBot
     {
-        return $this->findOneBy([
-            'username' => $username,
-        ]);
+        return $this->dynamodb->findAnyOneByUsername($username);
     }
 
     public function findOneByUsername(string $username): ?TelegramBot
     {
-        return $this->findOneBy([
-            'username' => $username,
-            'deletedAt' => null,
-        ]);
+        return $this->dynamodb->findOneByUsername($username);
     }
 
     public function findByGroup(TelegramBotGroupName $group): array
     {
-        return $this->findBy([
-            'group' => $group,
-            'deletedAt' => null,
-        ]);
+        return $this->dynamodb->findByGroup($group);
     }
 
     public function findPrimaryByGroup(TelegramBotGroupName $group): array
     {
-        return $this->findBy([
-            'group' => $group,
-            'primary' => true,
-            'deletedAt' => null,
-        ]);
+        return $this->dynamodb->findPrimaryByGroup($group);
     }
 
     public function findByGroupAndCountry(TelegramBotGroupName $group, string $countryCode): array
     {
-        return $this->findBy([
-            'group' => $group,
-            'countryCode' => $countryCode,
-            'deletedAt' => null,
-        ]);
+        return $this->dynamodb->findByGroupAndCountry($group, $countryCode);
     }
 
     public function findOnePrimaryByBot(TelegramBot $bot): ?TelegramBot
     {
-        return $this->findOneBy([
-            'group' => $bot->getGroup(),
-            'countryCode' => $bot->getCountryCode(),
-            'localeCode' => $bot->getLocaleCode(),
-            'primary' => true,
-            'deletedAt' => null,
-        ]);
+        return $this->dynamodb->findOnePrimaryByBot($bot);
     }
 
     public function findPrimaryByGroupAndIds(TelegramBotGroupName $group, array $ids): array
     {
-        return $this->findBy([
-            'id' => $ids,
-            'group' => $group,
-            'primary' => true,
-            'deletedAt' => null,
-        ]);
+        return $this->dynamodb->findPrimaryByGroupAndIds($group, $ids);
     }
 }

@@ -44,6 +44,9 @@
 * GRANT ALL PRIVILEGES ON app_test.* TO 'app'@'%';
 
 # TODO
+* investigate telegram_updates table
+
+
 * queues
 * generate badge (picture) with username/rating to post in messengers
 * "list my feedbacks" command

@@ -6,14 +6,14 @@ namespace App\Service\Telegram\Bot;
 
 use App\Entity\Telegram\TelegramBotUpdate;
 use App\Repository\Telegram\Bot\TelegramBotUpdateRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\ORM\EntityManager;
 use Psr\Log\LoggerInterface;
 
 class TelegramBotUpdateChecker
 {
     public function __construct(
         private readonly TelegramBotUpdateRepository $telegramBotUpdateRepository,
-        private readonly EntityManagerInterface $entityManager,
+        private readonly EntityManager $entityManager,
         private readonly LoggerInterface $logger,
         private readonly bool $saveOnly = false,
     )
@@ -31,7 +31,7 @@ class TelegramBotUpdateChecker
         }
 
         if (!$this->saveOnly) {
-            $update = $this->telegramBotUpdateRepository->find($bot->getUpdate()?->getUpdateId());
+            $update = $this->telegramBotUpdateRepository->findOneByUpdateId($bot->getUpdate()?->getUpdateId());
 
             if ($update !== null) {
                 $this->logger->debug('Duplicate telegram update received, processing aborted', [
@@ -46,7 +46,7 @@ class TelegramBotUpdateChecker
         $update = new TelegramBotUpdate(
             (string) $bot->getUpdate()->getUpdateId(),
             $bot->getUpdate()->getRawData(),
-            $bot->getEntity()
+            $bot->getEntity(),
         );
         $this->entityManager->persist($update);
 

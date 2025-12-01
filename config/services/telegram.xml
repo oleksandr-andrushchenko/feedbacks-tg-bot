@@ -9,14 +9,32 @@
     </parameters>
 
     <services>
+        <service id="app.telegram_bot_update_doctrine_repository"
+                 class="App\Repository\Telegram\Bot\TelegramBotUpdateDoctrineRepository">
+            <argument type="service" id="doctrine"/>
+        </service>
+        <service id="app.telegram_bot_update_dynamodb_repository"
+                 class="App\Repository\Telegram\Bot\TelegramBotUpdateDynamodbRepository"
+                 parent="oa.dynamodb.entity_repository"/>
         <service id="app.telegram_bot_update_repository"
                  class="App\Repository\Telegram\Bot\TelegramBotUpdateRepository">
+            <argument type="service" id="app.telegram_bot_update_doctrine_repository"/>
+            <argument type="service" id="app.telegram_bot_update_dynamodb_repository"/>
+        </service>
+
+        <service id="app.telegram_bot_conversation_dynamodb_repository"
+                 class="App\Repository\Telegram\Bot\TelegramBotConversationDynamodbRepository"
+                 parent="oa.dynamodb.entity_repository"/>
+        <service id="app.telegram_bot_conversation_doctrine_repository"
+                 class="App\Repository\Telegram\Bot\TelegramBotConversationDoctrineRepository">
             <argument type="service" id="doctrine"/>
         </service>
         <service id="app.telegram_bot_conversation_repository"
                  class="App\Repository\Telegram\Bot\TelegramBotConversationRepository">
-            <argument type="service" id="doctrine"/>
+            <argument type="service" id="app.telegram_bot_conversation_doctrine_repository"/>
+            <argument type="service" id="app.telegram_bot_conversation_dynamodb_repository"/>
         </service>
+
         <service id="app.telegram_bot_stopped_conversation_repository"
                  class="App\Repository\Telegram\Bot\TelegramBotStoppedConversationRepository">
             <argument type="service" id="doctrine"/>
@@ -25,19 +43,64 @@
                  class="App\Repository\Telegram\Bot\TelegramBotPaymentRepository">
             <argument type="service" id="doctrine"/>
         </service>
-        <service id="app.telegram_bot_request_repository"
-                 class="App\Repository\Telegram\Bot\TelegramBotRequestRepository">
+
+        <service id="app.telegram_bot_request_doctrine_repository"
+                 class="App\Repository\Telegram\Bot\TelegramBotRequestDoctrineRepository">
             <argument type="service" id="doctrine"/>
         </service>
-        <service id="app.telegram_bot_repository" class="App\Repository\Telegram\Bot\TelegramBotRepository">
+        <service id="app.telegram_bot_request_repository"
+                 class="App\Repository\Telegram\Bot\TelegramBotRequestRepository">
+            <argument type="service" id="app.telegram_bot_request_doctrine_repository"/>
+        </service>
+
+        <service id="app.telegram_bot_chat_request_sec_rate_limit_dynamodb_repository"
+                 class="App\Repository\Telegram\Bot\TelegramBotChatRequestSecRateLimitDynamodbRepository"
+                 parent="oa.dynamodb.entity_repository"/>
+        <service id="app.telegram_bot_chat_request_sec_rate_limit_repository"
+                 class="App\Repository\Telegram\Bot\TelegramBotChatRequestSecRateLimitRepository">
+            <argument type="service" id="app.telegram_bot_chat_request_sec_rate_limit_dynamodb_repository"/>
+        </service>
+
+        <service id="app.telegram_bot_chat_request_min_rate_limit_dynamodb_repository"
+                 class="App\Repository\Telegram\Bot\TelegramBotChatRequestMinRateLimitDynamodbRepository"
+                 parent="oa.dynamodb.entity_repository"/>
+        <service id="app.telegram_bot_chat_request_min_rate_limit_repository"
+                 class="App\Repository\Telegram\Bot\TelegramBotChatRequestMinRateLimitRepository">
+            <argument type="service" id="app.telegram_bot_chat_request_min_rate_limit_dynamodb_repository"/>
+        </service>
+
+        <service id="app.telegram_bot_global_request_sec_rate_limit_dynamodb_repository"
+                 class="App\Repository\Telegram\Bot\TelegramBotGlobalRequestSecRateLimitDynamodbRepository"
+                 parent="oa.dynamodb.entity_repository"/>
+        <service id="app.telegram_bot_global_request_sec_rate_limit_repository"
+                 class="App\Repository\Telegram\Bot\TelegramBotGlobalRequestSecRateLimitRepository">
+            <argument type="service" id="app.telegram_bot_global_request_sec_rate_limit_dynamodb_repository"/>
+        </service>
+
+        <service id="app.telegram_bot_doctrine_repository"
+                 class="App\Repository\Telegram\Bot\TelegramBotDoctrineRepository">
             <argument type="service" id="doctrine"/>
         </service>
         <service id="app.telegram_bot_dynamodb_repository"
-                 class="App\DynamodbRepository\Telegram\Bot\TelegramBotRepository"
+                 class="App\Repository\Telegram\Bot\TelegramBotDynamodbRepository"
                  parent="oa.dynamodb.entity_repository"/>
-        <service id="app.telegram_channel_repository" class="App\Repository\Telegram\Channel\TelegramChannelRepository">
+        <service id="app.telegram_bot_repository" class="App\Repository\Telegram\Bot\TelegramBotRepository">
+            <argument type="service" id="app.telegram_bot_doctrine_repository"/>
+            <argument type="service" id="app.telegram_bot_dynamodb_repository"/>
+        </service>
+
+        <service id="app.telegram_channel_dynamodb_repository"
+                 class="App\Repository\Telegram\Channel\TelegramChannelDynamodbRepository"
+                 parent="oa.dynamodb.entity_repository"/>
+        <service id="app.telegram_channel_doctrine_repository"
+                 class="App\Repository\Telegram\Channel\TelegramChannelDoctrineRepository">
             <argument type="service" id="doctrine"/>
         </service>
+        <service id="app.telegram_channel_repository" class="App\Repository\Telegram\Channel\TelegramChannelRepository">
+            <argument type="service" id="app.telegram_channel_doctrine_repository"/>
+            <argument type="service" id="app.telegram_channel_dynamodb_repository"/>
+        </service>
+
         <service id="app.telegram_bot_payment_method_repository"
                  class="App\Repository\Telegram\Bot\TelegramBotPaymentMethodRepository">
             <argument type="service" id="doctrine"/>
@@ -160,7 +223,7 @@
         <service id="app.telegram_channel_create_command"
                  class="App\Command\Telegram\Channel\TelegramChannelCreateCommand" lazy="true">
             <argument type="service" id="app.telegram_channel_creator"/>
-            <argument type="service" id="doctrine.orm.entity_manager"/>
+            <argument type="service" id="app.orm.entity_manager"/>
             <argument type="service" id="app.telegram_channel_info_provider"/>
             <argument type="service" id="app.intl_country_provider"/>
             <argument type="service" id="app.intl_locale_provider"/>
@@ -223,11 +286,11 @@
         </service>
         <service id="app.telegram_link_provider" class="App\Service\Telegram\TelegramLinkProvider" lazy="true"/>
         <service id="app.telegram_bot_validator" class="App\Service\Telegram\Bot\TelegramBotValidator" lazy="true">
-            <argument type="service" id="app.telegram_bot_dynamodb_repository"/>
+            <argument type="service" id="app.telegram_bot_repository"/>
             <argument type="service" id="app.intl_country_provider"/>
         </service>
         <service id="app.telegram_controller" class="App\Controller\TelegramController">
-            <argument type="service" id="app.telegram_bot_dynamodb_repository"/>
+            <argument type="service" id="app.telegram_bot_repository"/>
             <argument type="service" id="app.telegram_bot_update_handler"/>
             <argument type="service" id="doctrine.orm.entity_manager"/>
             <argument type="service" id="app.telegram_bot_site_view_response_factory"/>
@@ -235,8 +298,9 @@
             <tag name="controller.service_arguments"/>
         </service>
         <service id="app.telegram_bot_creator" class="App\Service\Telegram\Bot\TelegramBotCreator" lazy="true">
-            <argument type="service" id="oa.dynamodb.entity_manager"/>
+            <argument type="service" id="app.orm.entity_manager"/>
             <argument type="service" id="app.telegram_bot_validator"/>
+            <argument type="service" id="app.id_generator"/>
         </service>
         <service id="app.telegram_bot_updater" class="App\Service\Telegram\Bot\TelegramBotUpdater" lazy="true">
             <argument type="service" id="app.telegram_bot_validator"/>
@@ -267,7 +331,7 @@
                  class="App\Service\Telegram\Bot\Conversation\TelegramBotConversationManager" lazy="true">
             <argument type="service" id="app.telegram_bot_aware_helper"/>
             <argument type="service" id="app.telegram_bot_conversation_repository"/>
-            <argument type="service" id="doctrine.orm.entity_manager"/>
+            <argument type="service" id="app.orm.entity_manager"/>
             <argument type="service" id="serializer"/>
             <argument type="service" id="serializer"/>
             <argument type="service" id="app.array_null_filter"/>
@@ -309,13 +373,17 @@
         <service id="app.telegram_bot_update_checker" class="App\Service\Telegram\Bot\TelegramBotUpdateChecker"
                  lazy="true">
             <argument type="service" id="app.telegram_bot_update_repository"/>
-            <argument type="service" id="doctrine.orm.entity_manager"/>
+            <argument type="service" id="app.orm.entity_manager"/>
             <argument type="service" id="logger"/>
         </service>
         <service id="app.telegram_bot_request_checker" class="App\Service\Telegram\Bot\TelegramBotRequestChecker"
                  lazy="true">
-            <argument type="service" id="app.telegram_bot_request_repository"/>
-            <argument type="service" id="doctrine.orm.entity_manager"/>
+            <!--            <argument type="service" id="app.telegram_bot_request_repository"/>-->
+            <argument type="service" id="app.telegram_bot_chat_request_sec_rate_limit_repository"/>
+            <argument type="service" id="app.telegram_bot_chat_request_min_rate_limit_repository"/>
+            <argument type="service" id="app.telegram_bot_global_request_sec_rate_limit_repository"/>
+            <argument type="service" id="app.orm.entity_manager"/>
+            <argument type="service" id="logger"/>
         </service>
         <service id="app.telegram_bot_non_admin_update_checker"
                  class="App\Service\Telegram\Bot\TelegramBotNonAdminUpdateChecker" lazy="true">
@@ -447,7 +515,7 @@
             <argument type="service" id="app.intl_country_provider"/>
             <argument type="service" id="app.intl_locale_provider"/>
             <argument type="service" id="app.csv_file_walker"/>
-            <argument type="service" id="doctrine.orm.entity_manager"/>
+            <argument type="service" id="app.orm.entity_manager"/>
             <argument>%app.stage%</argument>
         </service>
         <service id="app.telegram_channel_remover" class="App\Service\Telegram\Channel\TelegramChannelRemover"
@@ -459,7 +527,7 @@
         </service>
         <service id="app.telegram_channel_creator" class="App\Service\Telegram\Channel\TelegramChannelCreator"
                  lazy="true">
-            <argument type="service" id="doctrine.orm.entity_manager"/>
+            <argument type="service" id="app.orm.entity_manager"/>
             <argument type="service" id="app.telegram_channel_validator"/>
         </service>
         <service id="app.telegram_channel_updater" class="App\Service\Telegram\Channel\TelegramChannelUpdater"

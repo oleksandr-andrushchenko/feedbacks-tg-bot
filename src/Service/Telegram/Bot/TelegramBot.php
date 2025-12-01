@@ -105,6 +105,10 @@ class TelegramBot
     public function __call(string $name, array $arguments): mixed
     {
         $request = $this->telegramBotRequestChecker->checkTelegramRequest($this, $name, $arguments[0] ?? null);
+        $this->logger->debug(__METHOD__, [
+            'name' => $name,
+            'arguments' => $arguments,
+        ]);
         $response = $this->request($name, $arguments);
 
         if ($response instanceof ServerResponse) {

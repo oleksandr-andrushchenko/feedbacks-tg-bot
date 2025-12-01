@@ -44,6 +44,7 @@ services:
     volumes:
       - dynamodb-data:/home/dynamodblocal/data
     command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal/data"
+    user: root
 
 volumes:
   ###> doctrine/doctrine-bundle ###

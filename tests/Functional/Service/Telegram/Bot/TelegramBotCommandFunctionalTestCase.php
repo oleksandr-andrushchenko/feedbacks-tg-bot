@@ -42,7 +42,7 @@ use DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
 use Longman\TelegramBot\Entities\Keyboard;
 use Longman\TelegramBot\Entities\KeyboardButton;
 use Longman\TelegramBot\Entities\Update;
-use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\DependencyInjection\Container;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 abstract class TelegramBotCommandFunctionalTestCase extends DatabaseTestCase
@@ -117,7 +117,7 @@ abstract class TelegramBotCommandFunctionalTestCase extends DatabaseTestCase
         return $this->update;
     }
 
-    protected static function getContainer(): ContainerInterface
+    protected static function getContainer(): Container
     {
         return parent::getContainer();
     }

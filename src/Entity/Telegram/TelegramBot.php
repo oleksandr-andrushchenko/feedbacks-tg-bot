@@ -12,79 +12,72 @@ use OA\Dynamodb\Attribute\GlobalIndex;
 use OA\Dynamodb\Attribute\PartitionKey;
 use OA\Dynamodb\Attribute\SortKey;
 
-// todo: use Uuid::v4()
-// todo: https://github.com/edumarques/dynamophp/blob/main/docs/indexes.md
 #[Entity(
-    new PartitionKey(['id'], prefix: 'TELEGRAM_BOT'),
-    new SortKey([], prefix: 'META'),
+    new PartitionKey('TG_BOT', ['id']),
+    new SortKey('META'),
     [
-        new GlobalIndex('TELEGRAM_BOTS_BY_USERNAME', new PartitionKey(['username'], name: 'tg_bot_username_pk')),
+        new GlobalIndex(
+            'TG_BOTS_BY_USERNAME',
+            new PartitionKey(null, ['username'], 'tg_bot_username_pk')
+        ),
+        new GlobalIndex(
+            'TG_BOTS_BY_GROUP_COUNTRY_LOCALE',
+            new PartitionKey('TG_BOT', [], 'tg_bot_pk'),
+            new SortKey(null, ['group', 'countryCode', 'localeCode'], 'tg_bot_group_country_locale_sk'),
+        ),
+        new GlobalIndex(
+            'TG_BOTS_BY_GROUP_PRIMARY',
+            new PartitionKey('TG_BOT', [], 'tg_bot_pk'),
+            new SortKey(null, ['group', 'primary'], 'tg_bot_group_primary_sk'),
+        ),
     ]
 )]
 class TelegramBot
 {
     public function __construct(
-        #[Attribute(name: 'tg_bot_username_pk')]
+        #[Attribute('tg_bot_id')]
+        private readonly string $id,
+        #[Attribute('tg_bot_username_pk')]
         private readonly string $username,
-
         #[Attribute]
         private TelegramBotGroupName $group,
-
         #[Attribute]
         private string $name,
-
         #[Attribute]
         private string $token,
-
-        #[Attribute(name: 'country_code')]
+        #[Attribute('country_code')]
         private string $countryCode,
-
-        #[Attribute(name: 'locale_code')]
+        #[Attribute('locale_code')]
         private string $localeCode,
-
-        #[Attribute(name: 'check_updates')]
+        #[Attribute('check_updates')]
         private bool $checkUpdates = false,
-
-        #[Attribute(name: 'check_requests')]
+        #[Attribute('check_requests')]
         private bool $checkRequests = false,
-
-        #[Attribute(name: 'accept_payments')]
+        #[Attribute('accept_payments')]
         private bool $acceptPayments = false,
-
-        #[Attribute(name: 'admin_ids')]
+        #[Attribute('admin_ids')]
         private array $adminIds = [],
-
-        #[Attribute(name: 'admin_only')]
+        #[Attribute('admin_only')]
         private bool $adminOnly = true,
-
-        #[Attribute(name: 'descriptions_synced')]
+        #[Attribute('descriptions_synced')]
         private bool $descriptionsSynced = false,
-
-        #[Attribute(name: 'webhook_synced')]
+        #[Attribute('webhook_synced')]
         private bool $webhookSynced = false,
-
-        #[Attribute(name: 'commands_synced')]
+        #[Attribute('commands_synced')]
         private bool $commandsSynced = false,
-
         #[Attribute]
         private bool $primary = true,
-
-        #[Attribute(name: 'created_at')]
+        #[Attribute('created_at')]
         private ?DateTimeInterface $createdAt = null,
-
-        #[Attribute(name: 'updated_at')]
+        #[Attribute('updated_at')]
         private ?DateTimeInterface $updatedAt = null,
-
-        #[Attribute(name: 'deleted_at')]
+        #[Attribute('deleted_at')]
         private ?DateTimeInterface $deletedAt = null,
-
-        #[Attribute(name: 'tg_bot_id')]
-        private null|int|string $id = null,
     )
     {
     }
 
-    public function getId(): null|int|string
+    public function getId(): string
     {
         return $this->id;
     }

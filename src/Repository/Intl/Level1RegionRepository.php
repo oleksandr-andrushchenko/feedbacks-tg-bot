@@ -5,41 +5,32 @@ declare(strict_types=1);
 namespace App\Repository\Intl;
 
 use App\Entity\Intl\Level1Region;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Persistence\ManagerRegistry;
+use App\Repository\Repository;
 
 /**
- * @extends ServiceEntityRepository<Level1Region>
- *
- * @method Level1Region|null find($id, $lockMode = null, $lockVersion = null)
- * @method Level1Region|null findOneBy(array $criteria, array $orderBy = null)
- * @method Level1Region[]    findAll()
- * @method Level1Region[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @extends Repository<Level1Region>
+ * @method Level1RegionDoctrineRepository doctrine()
+ * @property Level1RegionDoctrineRepository doctrine
+ * @method Level1RegionDynamodbRepository dynamodb()
+ * @property Level1RegionDynamodbRepository $dynamodb
  */
-class Level1RegionRepository extends ServiceEntityRepository
+class Level1RegionRepository extends Repository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(
+        Level1RegionDoctrineRepository $level1RegionDoctrineRepository,
+        Level1RegionDynamodbRepository $level1RegionDynamodbRepository,
+    )
     {
-        parent::__construct($registry, Level1Region::class);
+        parent::__construct($level1RegionDoctrineRepository, $level1RegionDynamodbRepository);
     }
-
 
     public function findOneByCountryAndName(string $countryCode, string $name): ?Level1Region
     {
-        return $this->findOneBy([
-            'countryCode' => $countryCode,
-            'name' => $name,
-        ]);
+        return $this->dynamodb->findOneByCountryAndName($countryCode, $name);
     }
 
-    /**
-     * @param string $countryCode
-     * @return Level1Region[]
-     */
     public function findByCountry(string $countryCode): array
     {
-        return $this->findBy([
-            'countryCode' => $countryCode,
-        ]);
+        return $this->dynamodb->findByCountry($countryCode);
     }
 }

@@ -8,12 +8,12 @@ use App\Entity\Telegram\TelegramBotConversation;
 use App\Entity\Telegram\TelegramBotConversationState;
 use App\Entity\Telegram\TelegramBotStoppedConversation;
 use App\Repository\Telegram\Bot\TelegramBotConversationRepository;
+use App\Service\ORM\EntityManager;
 use App\Service\Telegram\Bot\Group\TelegramBotGroupRegistry;
 use App\Service\Telegram\Bot\TelegramBot;
 use App\Service\Telegram\Bot\TelegramBotAwareHelper;
 use App\Service\Telegram\Bot\TelegramBotChatProvider;
 use App\Service\Util\Array\ArrayNullFilter;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
@@ -25,7 +25,7 @@ class TelegramBotConversationManager
     public function __construct(
         private readonly TelegramBotAwareHelper $telegramBotAwareHelper,
         private readonly TelegramBotConversationRepository $telegramBotConversationRepository,
-        private readonly EntityManagerInterface $entityManager,
+        private readonly EntityManager $entityManager,
         private readonly NormalizerInterface $conversationStateNormalizer,
         private readonly DenormalizerInterface $conversationStateDenormalizer,
         private readonly ArrayNullFilter $arrayNullFilter,
@@ -56,7 +56,7 @@ class TelegramBotConversationManager
         $this->executeConversation($bot, $entity, 'invoke');
     }
 
-    public function createTelegramConversationHash(string $messengerUserId, int $chatId, int $botId): string
+    public function createTelegramConversationHash(string $messengerUserId, int $chatId, string $botId): string
     {
         return $messengerUserId . '-' . $chatId . '-' . $botId;
     }
@@ -78,7 +78,7 @@ class TelegramBotConversationManager
             (string) $chatId,
             $botId,
             $class,
-            $state === null ? null : $this->normalizeState($state)
+            $state === null ? null : $this->normalizeState($state),
         );
         $this->entityManager->persist($entity);
 

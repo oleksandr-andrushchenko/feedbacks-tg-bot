@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\DynamodbRepository\Intl;
+namespace App\Repository\Intl;
 
 use App\Entity\Intl\Level1Region;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -16,13 +16,12 @@ use Doctrine\Persistence\ManagerRegistry;
  * @method Level1Region[]    findAll()
  * @method Level1Region[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class Level1RegionRepository extends ServiceEntityRepository
+class Level1RegionDoctrineRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Level1Region::class);
     }
-
 
     public function findOneByCountryAndName(string $countryCode, string $name): ?Level1Region
     {

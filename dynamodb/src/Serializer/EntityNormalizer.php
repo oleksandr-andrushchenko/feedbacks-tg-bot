@@ -195,7 +195,10 @@ readonly class EntityNormalizer
         $prefix = $key->getPrefix();
 
         $classMetadata = $this->metadataLoader->getClassMetadata($entity::class);
-        $finalValue = $prefix ?? '';
+        $finalValue = [];
+        if ($prefix !== null) {
+            $finalValue[] = $prefix;
+        }
 
         foreach ($definedFields as $field) {
             if (false === $classMetadata->has($field)) {
@@ -215,10 +218,10 @@ readonly class EntityNormalizer
             /** @var scalar $currentFieldValue */
             $currentFieldValue = $this->normalizer->normalize($propertyValue);
 
-            $finalValue .= empty($finalValue) ? $currentFieldValue : $delimiter . $currentFieldValue;
+            $finalValue[] = $currentFieldValue;
         }
 
-        return $finalValue;
+        return implode($delimiter, $finalValue);
     }
 
     /**
@@ -289,7 +292,10 @@ readonly class EntityNormalizer
         }
 
         $classMetadata = $this->metadataLoader->getClassMetadata($class);
-        $finalValue = $prefix ?? '';
+        $finalValue = [];
+        if ($prefix !== null) {
+            $finalValue[] = $prefix;
+        }
 
         foreach ($valuesByFieldSorted as $field => $value) {
             if (false === $classMetadata->has($field)) {
@@ -307,10 +313,10 @@ readonly class EntityNormalizer
             /** @var scalar $currentFieldValue */
             $currentFieldValue = $this->normalizer->normalize($value);
 
-            $finalValue .= empty($finalValue) ? $currentFieldValue : $delimiter . $currentFieldValue;
+            $finalValue[] = $currentFieldValue;
         }
 
-        return $finalValue;
+        return implode($delimiter, $finalValue);
     }
 
     /**

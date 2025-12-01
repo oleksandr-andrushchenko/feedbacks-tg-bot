@@ -8,7 +8,7 @@ use App\Repository\Telegram\Bot\TelegramBotRepository;
 
 trait TelegramBotRepositoryProviderTrait
 {
-    public function getTelegramBotRepository(): TelegramBotRepository
+    public function getTelegramBotRepository(): TelegramBotDoctrineRepository
     {
         return static::getContainer()->get('app.telegram_bot_repository');
     }

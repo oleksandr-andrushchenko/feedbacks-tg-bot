@@ -14,9 +14,37 @@ help: ## Show this help
 		printf "  \033[36m%-20s\033[0m %s\n", a[1], $$2 \
 	}' $(MAKEFILE_LIST) | sort
 
+.PHONY: ngrok-setup
+ngrok-setup: ## Setup ngrok
+	@echo "Visit: https://dashboard.ngrok.com/get-started/setup/linux"
+
 .PHONY: ngrok-tunnel
-ngrok-tunnel: ## Start ngrok tunnel for backend function
-	ngrok http --host-header=rewrite http://localhost:$(BE_FUNCTION_PORT)
+ngrok-tunnel:
+	@echo "🔹 Checking for existing ngrok process..."
+	@if grep -q '^NGROK_PID=' .env; then \
+		PID=$$(grep '^NGROK_PID=' .env | cut -d '=' -f2); \
+		if [ -n "$$PID" ] && ps -p $$PID > /dev/null 2>&1; then \
+			echo "⚠️ Killing existing ngrok process $$PID..."; \
+			kill $$PID || echo "❌ Failed to kill $$PID"; \
+		fi; \
+		sed -i '/^NGROK_PID=/c\NGROK_PID=' .env; \
+	else \
+		echo 'NGROK_PID=' >> .env; \
+	fi
+	@if ! grep -q '^TELEGRAM_WEBHOOK_BASE_URL=' .env; then \
+		echo 'TELEGRAM_WEBHOOK_BASE_URL=' >> .env; \
+	fi
+
+	@echo "🔹 Starting new ngrok tunnel on port $(BE_FUNCTION_PORT)..."
+	@ngrok http --host-header=rewrite http://localhost:$(BE_FUNCTION_PORT) --log=stdout > /dev/null 2>&1 & \
+	NGROK_PID=$$!; \
+	echo "✅ Ngrok started with PID $$NGROK_PID"; \
+	sed -i "/^NGROK_PID=/c\NGROK_PID=$$NGROK_PID" .env; \
+	echo "🔹 Waiting for ngrok to initialize..."; \
+	until NGROK_URL=$$(curl -s http://127.0.0.1:4040/api/tunnels | grep -Po '\"public_url\":\"\Khttps?://[^\"]*'); do sleep 1; done; \
+	sed -i "/^TELEGRAM_WEBHOOK_BASE_URL=/c\TELEGRAM_WEBHOOK_BASE_URL=$$NGROK_URL" .env; \
+	echo "✅ Ngrok URL: $$NGROK_URL"; \
+	echo ".env updated with TELEGRAM_WEBHOOK_BASE_URL=$$NGROK_URL"
 
 .PHONY: start
 start: ## Build and start all Docker containers
@@ -33,6 +61,14 @@ restart: stop start ## Restart all Docker containers and show status
 .PHONY: composer-install
 composer-install: ## Run composer install inside be-function container
 	docker exec -it $(BE_FUNCTION_CONTAINER) composer install
+
+.PHONY: console
+console: ## Run Symfony console
+	@docker exec -it $(BE_FUNCTION_CONTAINER) php bin/console $(filter-out $@,$(MAKECMDGOALS))
+
+.PHONY: tests
+tests: ## Run PHPUnit tests
+	docker exec -it $(BE_FUNCTION_CONTAINER) ./vendor/phpunit/phpunit/phpunit $(filter-out $@,$(MAKECMDGOALS))
 
 .PHONY: warmup-cache
 warmup-cache: ## Warm up Symfony cache inside be-function container
@@ -72,7 +108,7 @@ rdbms-logs: ## View database (MySQL) container logs
 
 .PHONY: rdbms-login
 rdbms-login: ## Open MySQL shell inside database container
-	docker exec -it $(RDBMS_CONTAINER) mysql -uapp -p1111 -A app
+	docker exec -it $(RDBMS_CONTAINER) mysql -uroot -p1111 -A app
 
 .PHONY: generate-migration
 generate-migration: ## Generate a new Doctrine migration file
@@ -85,7 +121,7 @@ run-migrations: ## Execute pending Doctrine migrations
 .PHONY: create-local-dynamodb
 create-local-dynamodb: ## Create local DynamoDB table
 	@echo "🚀 Creating local DynamoDB table $(DYNAMODB_TABLE)..."
-	@if AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
+	if AWS_KEY=$(AWS_KEY) AWS_SECRET=$(AWS_SECRET) \
 		aws dynamodb describe-table \
 		--region "$(AWS_REGION)" \
 		--table-name "$(DYNAMODB_TABLE)" \
@@ -96,8 +132,8 @@ create-local-dynamodb: ## Create local DynamoDB table
 		docker exec -it $(BE_FUNCTION_CONTAINER) php bin/console dynamodb:schema:extract > /tmp/dynamodb_schema.json; \
 		if [ ! -s /tmp/dynamodb_schema.json ]; then echo '❌ Failed to generate valid DynamoDB schema JSON'; exit 1; fi; \
 		echo "📄 Generated schema:"; \
-		cat /tmp/dynamodb_schema.json | jq .; \
-		AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
+		cat /tmp/dynamodb_schema.json; \
+		AWS_KEY=$(AWS_KEY) AWS_SECRET=$(AWS_SECRET) \
 		aws dynamodb create-table \
 			--region "$(AWS_REGION)" \
 			--cli-input-json file:///tmp/dynamodb_schema.json \
@@ -111,7 +147,7 @@ create-local-dynamodb: ## Create local DynamoDB table
 .PHONY: fetch-local-dynamodb
 fetch-local-dynamodb: ## Fetch 100 records from local DynamoDB
 	@echo "📦 Fetching 100 records from $(DYNAMODB_TABLE)..."
-	AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
+	AWS_KEY=$(AWS_KEY) AWS_SECRET=$(AWS_SECRET) \
 	aws dynamodb scan \
 		--table-name "$(DYNAMODB_TABLE)" \
 		--limit 100 \
@@ -123,12 +159,12 @@ fetch-local-dynamodb: ## Fetch 100 records from local DynamoDB
 .PHONY: drop-local-dynamodb
 drop-local-dynamodb: ## Drop DynamoDB table in local DynamoDB
 	@echo "🗑️ Dropping local DynamoDB table $(DYNAMODB_TABLE)..."
-	@if AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
+	if AWS_KEY=$(AWS_KEY) AWS_SECRET=$(AWS_SECRET) \
 		aws dynamodb describe-table \
 		--region "$(AWS_REGION)" \
 		--table-name "$(DYNAMODB_TABLE)" \
 		--endpoint-url "http://localhost:$(DYNAMODB_PORT)" > /dev/null 2>&1; then \
-		AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) \
+		AWS_KEY=$(AWS_KEY) AWS_SECRET=$(AWS_SECRET) \
 		aws dynamodb delete-table \
 			--region "$(AWS_REGION)" \
 			--table-name "$(DYNAMODB_TABLE)" \
@@ -141,3 +177,22 @@ drop-local-dynamodb: ## Drop DynamoDB table in local DynamoDB
 
 .PHONY: recreate-local-dynamodb
 recreate-local-dynamodb: drop-local-dynamodb create-local-dynamodb ## Recreate DynamoDB table in local DynamoDB
+
+.PHONY: fix-permissions
+fix-permissions: ## Fix permissions
+	sudo chown -R 1001:1001 var/
+
+.PHONY: reload-dynamodb
+reload-dynamodb: recreate-local-dynamodb ## Reload local Dynamodb
+	docker exec -it $(BE_FUNCTION_CONTAINER) php bin/console dynamodb:from-doctrine:transfer
+	$(MAKE) fetch-local-dynamodb
+
+.PHONY: reload-bot
+reload-bot: ngrok-tunnel sync-bot-webhook # Reload local tg bot
+
+.PHONY: reload-cache
+reload-cache: clear-cache fix-permissions # Reload local symfony cache
+
+.PHONY: rdbms-prod-login
+rdbms-prod-login: ## Open PROD MySQL shell
+	docker exec -it $(RDBMS_CONTAINER) mysql -h$(PROD_DB_HOST) -u$(PROD_DB_USER) -p$(PROD_DB_PASS) -A $(PROD_DB_NAME)

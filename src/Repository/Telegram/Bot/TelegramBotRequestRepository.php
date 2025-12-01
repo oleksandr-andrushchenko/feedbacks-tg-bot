@@ -6,67 +6,22 @@ namespace App\Repository\Telegram\Bot;
 
 use App\Entity\Telegram\TelegramBotRequest;
 use App\Entity\Telegram\TelegramBotRequestLimits;
-use DateTime;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Persistence\ManagerRegistry;
+use App\Repository\Repository;
 
 /**
- * @extends ServiceEntityRepository<TelegramBotRequest>
- *
- * @method TelegramBotRequest|null find($id, $lockMode = null, $lockVersion = null)
- * @method TelegramBotRequest|null findOneBy(array $criteria, array $orderBy = null)
- * @method TelegramBotRequest[]    findAll()
- * @method TelegramBotRequest[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @extends Repository<TelegramBotRequest>
  */
-class TelegramBotRequestRepository extends ServiceEntityRepository
+class TelegramBotRequestRepository extends Repository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(
+        TelegramBotRequestDoctrineRepository $telegramBotRequestDoctrineRepository,
+    )
     {
-        parent::__construct($registry, TelegramBotRequest::class);
+        parent::__construct($telegramBotRequestDoctrineRepository, null);
     }
 
-    public function getLimits(null|int|string $chatId, ?int $inlineMessageId): ?TelegramBotRequestLimits
+    public function getLimits(null|int|string $chatId): ?TelegramBotRequestLimits
     {
-        $perSecondAll = $this
-            ->createQueryBuilder('tr')
-            ->select('COUNT(DISTINCT tr.chatId)')
-            ->andWhere('tr.createdAt >= :createdAtFrom')
-            ->setParameter('createdAtFrom', new DateTime())
-            ->getQuery()
-            ->getSingleScalarResult()
-        ;
-
-        if ($perSecondAll === null) {
-            return null;
-        }
-
-        $perSecond = $this
-            ->createQueryBuilder('tr')
-            ->select('COUNT(tr.id)')
-            ->andWhere('tr.createdAt >= :createdAtFrom')
-            ->setParameter('createdAtFrom', new DateTime())
-            ->andWhere('(tr.chatId = :chatId AND tr.inlineMessageId IS NULL) OR (tr.inlineMessageId = :inlineMessageId AND tr.chatId IS NULL)')
-            ->setParameter('chatId', $chatId)
-            ->setParameter('inlineMessageId', $inlineMessageId)
-            ->getQuery()
-            ->getSingleScalarResult()
-        ;
-
-        $perMinute = $this
-            ->createQueryBuilder('tr')
-            ->select('COUNT(tr.id)')
-            ->andWhere('tr.createdAt >= :createdAtFrom')
-            ->setParameter('createdAtFrom', (new DateTime())->modify('-1 minute'))
-            ->andWhere('tr.chatId = :chatId')
-            ->setParameter('chatId', $chatId)
-            ->getQuery()
-            ->getSingleScalarResult()
-        ;
-
-        return new TelegramBotRequestLimits(
-            (int) $perSecondAll,
-            (int) $perSecond,
-            (int) $perMinute
-        );
+        return $this->doctrine->getLimits($chatId);
     }
 }
